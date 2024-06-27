@@ -47,7 +47,9 @@ def create_audio_waveform(audio_path, output_path):
 def create_audio_spectrogram(audio_path, output_path):
     samplerate, data = wav.read(audio_path)
     f, t, Sxx = spectrogram(data, samplerate)
-    if 
+    if Sxx.ndim == 1: 
+        Sxx = np.expand_dims(Sxx, axis=1)
+    
     plt.figure(figsize=(12, 6))
     plt.pcolormesh(t, f, 10 * np.log10(Sxx), shading='gouraud')
     plt.title('Espectrograma del Audio')
