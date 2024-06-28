@@ -8,6 +8,7 @@ from scipy.signal import spectrogram
 import scipy.fftpack as fft
 import os
 import subprocess
+from pydub import AudioSegment
 from moviepy.editor import AudioFileClip, ImageClip, concatenate_videoclips
 
 # Paso 1: Descargar el video de YouTube
@@ -71,7 +72,7 @@ def create_color_rave_visualization(audio_path, output_path):
         
         data = data[:, 0] if data.ndim == 2 else data
 
-        print(f"Dimensiones de data: {data}")
+        print(f"Dimensiones de data: {data.shape}")
         
         # Normalización de la amplitud
         normalized_amplitude = data / np.max(np.abs(data))
@@ -101,6 +102,7 @@ def create_audio_frequency_spectrum(audio_path, output_path):
         return False
     try:
         samplerate, data = wav.read(audio_path)
+        data = data[:, 0] if data.ndim == 2 else data  # Asegurarse de que los datos sean unidimensionales
         N = len(data)
         T = 1.0 / samplerate
         yf = fft.fft(data)
@@ -119,26 +121,33 @@ def create_audio_frequency_spectrum(audio_path, output_path):
         return False
 
 # Paso 6: Crear un video con las visualizaciones del audio
-def create_video_with_visualizations(audio_path, waveform_path, color_rave_path, spectrum_path, output_path):
+def create_video_with_visualizations_and_audio(audio_path, waveform_path, color_rave_path, spectrum_path, video_output_path):
     try:
+        # Cargar los clips de audio y visualizaciones
         audio = AudioFileClip(audio_path)
-        waveform_clip = ImageClip(waveform_path).set_duration(audio.duration)
-        color_rave_clip = ImageClip(color_rave_path).set_duration(audio.duration)
-        spectrum_clip = ImageClip(spectrum_path).set_duration(audio.duration)
+        audio_duration = audio.duration 
+        
+        waveform_clip = ImageClip(waveform_path).set_duration(audio_duration)
+        color_rave_clip = ImageClip(color_rave_path).set_duration(audio_duration)
+        spectrum_clip = ImageClip(spectrum_path).set_duration(audio_duration)
 
-        waveform_clip = waveform_clip.resize(height=480).set_position(('center', 'top')).set_duration(audio.duration)
-        color_rave_clip = color_rave_clip.resize(height=480).set_position(('center', 'center')).set_duration(audio.duration)
-        spectrum_clip = spectrum_clip.resize(height=480).set_position(('center', 'bottom')).set_duration(audio.duration)
-
+        waveform_clip = waveform_clip.resize(height=480).set_position(('center', 'top'))
+        color_rave_clip = color_rave_clip.resize(height=480).set_position(('center', 'center'))
+        spectrum_clip = spectrum_clip.resize(height=480).set_position(('center', 'bottom'))
+        
+        # Combina los clips en un solo video
         final_clip = concatenate_videoclips([waveform_clip, color_rave_clip, spectrum_clip])
-        final_clip.write_videofile(output_path, fps=24, codec='libx264', audio_codec='aac')
+        # Asignar audio al video generado
+        final_clip = final_clip.set_audio(audio)
+        
+        # Guarda el video final
+        final_clip.write_videofile(video_output_path, fps=24, codec='libx264', audio_codec='aac')
 
-        print(f"Video con visualizaciones guardado en: {output_path}")
+        print(f"Video con visualizaciones y audio guardado en: {video_output_path}")
         return True
     except Exception as e:
-        print(f"Error al crear el video con visualizaciones: {e}")
-        return False
-    
+        print(f"Error al crear el video con visualizaciones y audio: {e}")
+        return False 
 
 # Función principal para ejecutar los pasos
 if __name__ == "__main__":
@@ -155,7 +164,7 @@ if __name__ == "__main__":
             if create_audio_waveform(audio_output, waveform_output):
                 if create_color_rave_visualization(audio_output, color_rave_output):
                     if create_audio_frequency_spectrum(audio_output, spectrum_output):
-                        create_video_with_visualizations(audio_output, waveform_output, color_rave_output, spectrum_output, video_visualizations_output)
+                        create_video_with_visualizations_and_audio(audio_output, waveform_output, color_rave_output, spectrum_output, video_visualizations_output)
                     else:
                         print("No se pudo crear el espectro de frecuencia.")
                 else:
