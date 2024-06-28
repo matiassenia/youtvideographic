@@ -11,7 +11,7 @@ import subprocess
 from pydub import AudioSegment
 from moviepy.editor import AudioFileClip, ImageClip, concatenate_videoclips
 
-# Paso 1: Descargar el video de YouTube
+# Paso 1: Función de que descargar el video de YouTube
 def download_youtube_video(url, output_path='video.mp4'):
     ssl._create_default_https_context = ssl._create_unverified_context
     
@@ -171,3 +171,5 @@ if __name__ == "__main__":
                     print("No se pudo crear la visualización de rapé de colores.")
             else:
                 print("No se pudo crear la forma de onda.")
+
+
